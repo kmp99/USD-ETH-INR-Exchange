@@ -2,7 +2,7 @@ pragma solidity ^0.4.22;
 
 import "github.com/provable-things/ethereum-api/provableAPI_0.4.25.sol";
 
-contract Token {
+contract Token is usingProvable {
 
     function totalSupply() constant returns (uint256 supply) {}
 
@@ -14,7 +14,10 @@ contract Token {
 
     function approve(address _spender, uint256 _value) returns (bool success) {}
 
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {}
+    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    }
+
+
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
@@ -46,6 +49,10 @@ contract StandardToken is Token {
 
     function balanceOf(address _owner) constant returns (uint256 balance) {
         return balances[_owner];
+
+
+
+
     }
 
     function approve(address _spender, uint256 _value) returns (bool success) {
@@ -63,7 +70,7 @@ contract StandardToken is Token {
     uint256 public totalSupply;
 }
 
-contract HashnodeTestCoin is StandardToken {
+contract USDTestCoin is StandardToken {
 
     string public name;
     uint8 public decimals;
@@ -72,14 +79,33 @@ contract HashnodeTestCoin is StandardToken {
     uint256 public unitsOneEthCanBuy;
     uint256 public totalEthInWei;
     address public fundsWallet;
-    function HashnodeTestCoin() {
+
+
+   event NewProvableQuery(string description);
+   event NewETHUSD(string ethereumtoUSD);
+
+
+   function __callback(bytes32 myid, string result) {
+       if (msg.sender != provable_cbAddress()) revert();
+       NewETHUSD(result);
+       unitsOneEthCanBuy = parseInt(result);
+   }
+
+   function update() public payable {
+       NewProvableQuery("Provable querry was sent, waiting for a response...");
+       provable_query("URL", "json(https://api.pro.coinbase.com/products/ETH-USD/ticker).price");
+
+
+   }
+
+    function USDTestCoin() {
         balances[msg.sender] = 1000000000000000000000;
         totalSupply = 1000000000000000000000;
-        name = "Indian Rupees";
+        name = "US Doller";
         decimals = 18;
-        symbol = "INR";
-        unitsOneEthCanBuy = 12028 ;
-        fundsWallet = msg.sender;                                   
+        symbol = "USD";
+        //unitsOneEthCanBuy = 168 ;
+        fundsWallet = msg.sender;
     }
 
     function() payable{
@@ -105,31 +131,3 @@ contract HashnodeTestCoin is StandardToken {
         return true;
     }
 }
-
-
-// contract USD is usingProvable {
-//
-//    string public ETHUSD;
-//    event LogConstructorInitiated(string nextStep);
-//    event LogPriceUpdated(string price);
-//    event LogNewProvableQuery(string description);
-//
-//    function ExampleContract() payable {
-//        LogConstructorInitiated("Constructor was initiated. Call 'updatePrice()' to send the Provable Query.");
-//    }
-//
-//    function __callback(bytes32 myid, string result) {
-//        if (msg.sender != provable_cbAddress()) revert();
-//        ETHUSD = result;
-//        LogPriceUpdated(result);
-//    }
-//
-//    function updatePrice() payable {
-//        if (provable_getPrice("URL") > this.balance) {
-//            LogNewProvableQuery("Provable query was NOT sent, please add some ETH to cover for the query fee");
-//        } else {
-//            LogNewProvableQuery("Provable query was sent, standing by for the answer..");
-//            provable_query("URL", "json(https://api.pro.coinbase.com/products/ETH-USD/ticker).price");
-//        }
-//    }
-// }
