@@ -131,3 +131,64 @@ contract USDTestCoin is StandardToken {
         return true;
     }
 }
+
+contract INRTestCoin is StandardToken {
+
+    string public name;
+    uint8 public decimals;
+    string public symbol;
+    string public version = 'I1.0';
+    uint256 public unitsOneEthCanBuy;
+    uint256 public totalEthInWei;
+    address public fundsWallet;
+
+
+   event NewProvableQuery(string description);
+   event NewETHINR(string ethereumtoINR);
+
+
+   function __callback(bytes32 myid, string result) {
+       if (msg.sender != provable_cbAddress()) revert();
+       NewETHINR(result);
+       unitsOneEthCanBuy = parseInt(result);
+   }
+
+   function update() public payable {
+       NewProvableQuery("Provable querry was sent, waiting for a response...");
+       provable_query("URL", "json(https://api.pro.coinbase.com/products/ETH-USD/ticker).price");//change the Ethereum to INR  Api
+
+
+   }
+
+    function INRTestCoin() {
+        balances[msg.sender] = 1000000000000000000000;
+        totalSupply = 1000000000000000000000;
+        name = "INDIAN Ruppees";
+        decimals = 18;
+        symbol = "INR";
+        fundsWallet = msg.sender;
+    }
+
+    function() payable{
+        totalEthInWei = totalEthInWei + msg.value;
+        uint256 amount = msg.value * unitsOneEthCanBuy;
+        require(balances[fundsWallet] >= amount);
+
+        balances[fundsWallet] = balances[fundsWallet] - amount;
+        balances[msg.sender] = balances[msg.sender] + amount;
+
+        Transfer(fundsWallet, msg.sender, amount); // Broadcast a message to the blockchain
+
+        //Transfer ether to fundsWallet
+        fundsWallet.transfer(msg.value);
+    }
+
+    function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
+        allowed[msg.sender][_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+
+
+        if(!_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData)) { throw; }
+        return true;
+    }
+}
